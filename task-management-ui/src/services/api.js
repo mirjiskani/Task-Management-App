@@ -11,22 +11,21 @@ const api = axios.create({
     withCredentials: true, // Include cookies in requests if needed
 })
 
+
 const interceptRequest = (config) => {
     // Add any request interceptors here (e.g., add auth token)
-
     if(_accessToken) {
         config.headers['Authorization'] = `Bearer ${_accessToken}`;
     }
-
     return config;
-}, 
-(error) => {
+};
+
+const interceptRequestError = (error) => {
     // Handle request error here
     return Promise.reject(error);
-}
+};
 
-
-api.interceptors.request.use(interceptRequest);
+api.interceptors.request.use(interceptRequest, interceptRequestError);
 
 api.interceptors.response.use(
     (response) => {
