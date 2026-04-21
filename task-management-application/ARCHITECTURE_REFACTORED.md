@@ -1,4 +1,4 @@
-# Refactored Architecture Documentation
+# Architecture Documentation
 
 ## ✅ Proper Symfony Architecture Implemented
 
