@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/api/tasks')]
-class TaskControllerRefactored extends AbstractController
+class TaskController extends AbstractController
 {
     private TaskService $taskService;
 
