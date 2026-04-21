@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\Service\AuthService;
+use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -11,15 +11,16 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
+
 #[Route('/api/users')]
 class UserController extends AbstractController
 {
-    private AuthService $authService;
+    private UserService $userService;
     private ValidatorInterface $validator;
 
-    public function __construct(AuthService $authService, ValidatorInterface $validator)
+    public function __construct(UserService $userService, ValidatorInterface $validator)
     {
-        $this->authService = $authService;
+        $this->userService = $userService;
         $this->validator = $validator;
     }
 
@@ -40,10 +41,10 @@ class UserController extends AbstractController
             }
 
             // Authenticate user
-            $user = $this->authService->authenticate($data['email'], $data['password']);
+            $user = $this->userService->authenticate($data['email'], $data['password']);
             
             // Generate JWT token
-            $token = $this->authService->generateToken($user, ['login' => true]);
+            $token = $this->userService->generateToken($user, ['login' => true]);
 
             return new JsonResponse([
                 'message' => 'Login successful',
@@ -80,14 +81,14 @@ class UserController extends AbstractController
             }
 
             // Create user
-            $user = $this->authService->createUser($data);
+            $user = $this->userService->createUser($data);
             
             // Generate token
-            $token = $this->authService->generateToken($user, ['register' => true]);
+            // $token = $this->userService->generateToken($user, ['register' => true]);
 
             return new JsonResponse([
                 'message' => 'Registration successful',
-                'token' => $token,
+                // 'token' => $token,
                 'user' => [
                     'id' => $user->getId(),
                     'name' => $user->getName(),
@@ -103,6 +104,118 @@ class UserController extends AbstractController
         }
     }
 
+    // GET ALL USERS - GET /api/users
+    #[Route('', methods: ['GET'])]
+    public function getAllUsers(): JsonResponse
+    {
+        try {
+            $users = $this->userService->getAllUsers();
+            
+            $userList = [];
+            foreach ($users as $user) {
+                $userList[] = [
+                    'id' => $user->getId(),
+                    'name' => $user->getName(),
+                    'email' => $user->getEmail(),
+                    'role' => $user->getRole(),
+                    'status' => $user->getStatus(),
+                    'created_at' => $user->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'updated_at' => $user->getUpdatedAt()->format('Y-m-d H:i:s')
+                ];
+            }
+
+            return new JsonResponse([
+                'users' => $userList,
+                'total' => count($userList)
+            ]);
+
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Failed to get users'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // GET SINGLE USER - GET /api/users/{id}
+    #[Route('/{id}', methods: ['GET'])]
+    public function getSingleUser(int $id): JsonResponse
+    {
+        try {
+            $user = $this->userService->getUserById($id);
+            
+            if (!$user) {
+                return new JsonResponse(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            return new JsonResponse([
+                'user' => [
+                    'id' => $user->getId(),
+                    'name' => $user->getName(),
+                    'email' => $user->getEmail(),
+                    'role' => $user->getRole(),
+                    'status' => $user->getStatus(),
+                    'created_at' => $user->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'updated_at' => $user->getUpdatedAt()->format('Y-m-d H:i:s')
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Failed to get user'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // UPDATE USER - PUT /api/users/{id}
+    #[Route('/{id}', methods: ['PUT'])]
+    public function updateUser(int $id, Request $request): JsonResponse
+    {
+        try {
+            $user = $this->userService->getUserById($id);
+            
+            if (!$user) {
+                return new JsonResponse(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            $data = json_decode($request->getContent(), true);
+            
+            if (!$data) {
+                return new JsonResponse(['error' => 'Invalid JSON'], Response::HTTP_BAD_REQUEST);
+            }
+
+            // Update user fields
+            if (isset($data['name'])) {
+                $user->setName($data['name']);
+            }
+            
+            if (isset($data['email'])) {
+                $user->setEmail($data['email']);
+            }
+            
+            if (isset($data['role'])) {
+                $user->setRole($data['role']);
+            }
+            
+            if (isset($data['status'])) {
+                $user->setStatus($data['status']);
+            }
+
+            // Save updated user
+            $this->userService->saveUser($user);
+
+            return new JsonResponse([
+                'message' => 'User updated successfully',
+                'user' => [
+                    'id' => $user->getId(),
+                    'name' => $user->getName(),
+                    'email' => $user->getEmail(),
+                    'role' => $user->getRole(),
+                    'status' => $user->getStatus(),
+                    'updated_at' => $user->getUpdatedAt()->format('Y-m-d H:i:s')
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Failed to update user'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // LOGOUT - POST /api/users/logout
     #[Route('/logout', methods: ['POST'])]
     public function logout(Request $request): JsonResponse
@@ -115,7 +228,7 @@ class UserController extends AbstractController
             }
 
             // Revoke token
-            $this->authService->revokeToken($data['token']);
+            $this->userService->revokeToken($data['token']);
 
             return new JsonResponse(['message' => 'Logout successful']);
 
@@ -168,7 +281,7 @@ class UserController extends AbstractController
             }
             
             // Save user
-            $this->authService->generateToken($user, ['profile_updated' => true]);
+            $this->userService->generateToken($user, ['profile_updated' => true]);
 
             return new JsonResponse([
                 'message' => 'Profile updated successfully',
@@ -196,9 +309,9 @@ class UserController extends AbstractController
                 return new JsonResponse(['error' => 'Token required'], Response::HTTP_BAD_REQUEST);
             }
 
-            $user = $this->authService->validateToken($data['token']);
+            $user = $this->userService->validateToken($data['token']);
             
-            if ($user && !$this->authService->isTokenExpired($data['token'])) {
+            if ($user && !$this->userService->isTokenExpired($data['token'])) {
                 return new JsonResponse(['valid' => false, 'error' => 'Token expired']);
             }
 
@@ -228,7 +341,7 @@ class UserController extends AbstractController
                 return new JsonResponse(['error' => 'Token required'], Response::HTTP_BAD_REQUEST);
             }
 
-            $newToken = $this->authService->refreshToken($data['token']);
+            $newToken = $this->userService->refreshToken($data['token']);
             
             if ($newToken) {
                 return new JsonResponse([
@@ -285,7 +398,7 @@ class UserController extends AbstractController
             throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException('Authentication required');
         }
 
-        return $this->authService->validateToken($token);
+        return $this->userService->validateToken($token);
     }
 
     private function getTokenFromRequest(Request $request): ?string

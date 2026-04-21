@@ -145,6 +145,20 @@ class UserService
         return $this->userRepository->find($id);
     }
 
+    public function saveUser(Users $user): void
+    {
+        // Update timestamp
+        $user->setUpdatedAt(new \DateTime());
+        
+        // Validate user data
+        $errors = $this->validator->validate($user);
+        if (count($errors) > 0) {
+            throw new ValidationException($errors);
+        }
+        
+        $this->userRepository->save($user);
+    }
+
     public function getAllUsers(): array
     {
         return $this->userRepository->findAll();

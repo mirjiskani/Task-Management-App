@@ -25,6 +25,14 @@ class UsersRepository extends ServiceEntityRepository
     }
 
     /**
+     * Find all users
+     */
+    public function findAll(): array
+    {
+        return parent::findAll();  // Uses Doctrine's built-in findAll()
+    }
+    
+    /**
      * Find active users only
      */
     public function findActiveUsers(): array

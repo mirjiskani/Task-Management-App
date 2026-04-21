@@ -65,7 +65,18 @@ class AuthService
 
     public function validateToken(string $token): ?Users
     {
-        return $this->tokenManager->validate($token);
+        $userId = $this->tokenManager->validateToken($token);
+        
+        if (!$userId) {
+            return null;
+        }
+
+        return $this->userRepository->find($userId);
+    }
+
+    public function getAllUsers(): array
+    {
+        return $this->userRepository->findAll();
     }
 
     public function revokeToken(string $token): void
@@ -77,11 +88,6 @@ class AuthService
     {
         // Simple expiration check for demo
         return false;
-    }
-
-    public function getAllUsers(): array
-    {
-        return $this->userRepository->findAll();
     }
 
     public function deleteUser(int $id): void
