@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../vendor/symfony/routing/Loader/schema/routing.yaml
+# This file is the entry point to configure the routes of your app.
+# See also https://symfony.com/doc/current/routing.html
+# To list all registered routes, run the following command:
+#   bin/console debug:router
+
+controllers:
+    resource: '../src/Controller/'
+    type: attribute

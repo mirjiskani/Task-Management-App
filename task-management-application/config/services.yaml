@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+# See also https://symfony.com/doc/current/service_container/import.html
+parameters:
+    app.auth_service: '@App\Service\AuthService'
+    app.user_repository: '@App\Repository\UsersRepository'
+
+services:
+    # Default configuration for services in *this* file
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        # makes classes in src/ available to be used as services
+    App\:
+        resource: '../src/'
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+    # Auth Service
+    App\Service\AuthService:
+        arguments:
+            - '@App\Repository\UsersRepository'
+            - '@App\Service\TokenManager'
+
+    # Token Manager (simplified)
+    App\Service\TokenManager:
+        arguments:
+            - '@App\Repository\UsersRepository'
+
+    # Authentication Middleware (simplified)
+    App\Middleware\AuthMiddleware:
+        arguments:
+            - '@App\Service\TokenManager'
+            - '@App\Repository\UsersRepository'
