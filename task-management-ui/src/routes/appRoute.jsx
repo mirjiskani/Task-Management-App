@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from '../pages/login';
 import Register from '../pages/register';
 import Dashboard from '../pages/dashboard';
+import Users from '../pages/users';
 
 const protectRoute = (Component) => {
     return (props) => {
@@ -20,6 +21,7 @@ export default function appRoute() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />   
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/users" element={<Users />} />
             {/* <Route path="/dashboard" element={protectRoute(Dashboard)} /> */}
             <Route path="*" element={<Navigate to="/login" />} />
         </Routes>

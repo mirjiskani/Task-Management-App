@@ -46,6 +46,7 @@ export default function Navbar() {
                     ) : (
                         <>
                             <Link to="/dashboard" style={{ color: "#fff", textDecoration: "none", fontWeight: 500 }}>Dashboard</Link>   
+                            <Link to="/users" style={{ color: "#fff", textDecoration: "none", fontWeight: 500 }}>Users</Link>   
                             <Link to="/login" style={{ color: "#fff", textDecoration: "none", fontWeight: 500 }}>Login</Link>
                             <Link to="/register" style={{ color: "#fff", textDecoration: "none", fontWeight: 500 }}>Register</Link>
                         </>

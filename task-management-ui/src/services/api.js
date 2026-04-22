@@ -7,10 +7,9 @@ export const setAccessToken = (token) => {
 }
 
 const api = axios.create({
-    baseURL: 'https://api.example.com', // Replace with your API base URL
-    withCredentials: true, // Include cookies in requests if needed
+    baseURL: 'http://localhost:8000/api', // Replace with your API base URL
+    withCredentials: false, // Don't include cookies to avoid CORS credential issues
 })
-
 
 const interceptRequest = (config) => {
     // Add any request interceptors here (e.g., add auth token)

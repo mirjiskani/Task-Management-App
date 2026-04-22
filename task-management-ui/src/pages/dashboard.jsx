@@ -1,6 +1,6 @@
 
 
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -10,6 +10,10 @@ import { getTasks, addTask, editTask, deleteTask } from "../services/taskService
 
 export default function Dashboard() {
     const [showTaskForm, setShowTaskForm] = useState(false);
+    const [tasks, setTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
     const columns = [
         { header: "ID", accessor: "id" },
         { header: "Name", accessor: "name" },
@@ -19,18 +23,48 @@ export default function Dashboard() {
         { header: "Actions", accessor: "actions" }
     ];
 
-    const data = [
-        { id: 1, name: "Alice Johnson", email: "alice.johnson@example.com", role: "Admin", task: "Create Frontend UI" },
-        { id: 2, name: "Bob Smith", email: "bob.smith@example.com", role: "User", task: "Create Backend API" }
-    ];
+    // const data = [
+    //     { id: 1, name: "Alice Johnson", email: "alice.johnson@example.com", role: "Admin", task: "Create Frontend UI" },
+    //     { id: 2, name: "Bob Smith", email: "bob.smith@example.com", role: "User", task: "Create Backend API" }
+    // ];
 
+
+    useEffect(() => {
+        TaskList();
+    }, []);
 
     const TaskList = async () => {
         try {
+            setLoading(true);
             const response = await getTasks();
-            // Handle response data (e.g., set state with tasks)
+
+            // Handle different response structures
+            let tasksData = [];
+            if (response.data) {
+                // Axios response structure
+                tasksData = response.data.tasks || response.data;
+            } else {
+                // Direct response
+                tasksData = response.tasks || response;
+            }
+
+
+            const formattedTasks = tasksData.map(task => ({
+                id: task.id,
+                name: task.name,
+                email: task.email,
+                role: task.role,
+                task: task.task,
+            }));
+
+            setTasks(formattedTasks);
+            setError(null);
         } catch (error) {
-            toast.error("Failed to fetch tasks");
+            console.error("Failed to fetch tasks:", error);
+            setError("Failed to load tasks. Please try again.");
+            setTasks([]);
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -65,7 +99,7 @@ export default function Dashboard() {
         }
     }
 
-    
+
     return (
         <div style={{ padding: 24, background: "#f5f6fa", minHeight: "100vh" }}>
             <h1 style={{ marginBottom: 24, color: "#222" }}>Task Management Dashboard</h1>
@@ -75,7 +109,7 @@ export default function Dashboard() {
             >
                 Add New Task
             </button>
-            <Table columns={columns} data={data} />
+            <Table columns={columns} data={tasks} />
 
             {showTaskForm && (
                 <div style={{
@@ -110,7 +144,7 @@ export default function Dashboard() {
                     </div>
                 </div>
             )}
-        <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
+            <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
         </div>
     );
 }

@@ -1,4 +1,4 @@
-export function Table({ columns, data }) {
+export function Table({ columns, data, onEdit, onDelete }) {
     return (
         <table style={{ width: "100%", borderCollapse: "collapse", background: "#fff", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", borderRadius: 8 }}>        
             <thead>
@@ -11,22 +11,40 @@ export function Table({ columns, data }) {
                 </tr>
             </thead>    
             <tbody>
-                {data.map((row, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
-                        {columns.map((col, j) => (
-                            <td key={j} style={{ padding: "12px 16px", color: "#333", fontSize: 14 }}>
-                                {col.accessor === "actions" ? (
-                                    <>
-                                        <button style={{ marginRight: 8, padding: "4px 12px", background: "#1976d2", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>Edit</button>
-                                        <button style={{ padding: "4px 12px", background: "#e53935", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>Delete</button>
-                                    </>
-                                ) : (
-                                    row[col.accessor]
-                                )}
-                            </td>
-                        ))}
+                {data.length === 0 ? (
+                    <tr>
+                        <td colSpan={columns.length} style={{ textAlign: "center", padding: "24px", color: "#666" }}>
+                            No users found
+                        </td>
                     </tr>
-                ))}
+                ) : (
+                    data.map((row, i) => (
+                        <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+                            {columns.map((col, j) => (
+                                <td key={j} style={{ padding: "12px 16px", color: "#333", fontSize: 14 }}>
+                                    {col.accessor === "actions" ? (
+                                        <>
+                                            <button 
+                                                onClick={() => onEdit(row[col.accessor].id)} 
+                                                style={{ marginRight: 8, padding: "4px 12px", background: "#1976d2", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}
+                                            >
+                                                Edit
+                                            </button>
+                                            <button 
+                                                onClick={() => onDelete(row[col.accessor].id)} 
+                                                style={{ padding: "4px 12px", background: "#e53935", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}
+                                            >
+                                                Delete
+                                            </button>
+                                        </>
+                                    ) : (
+                                        row[col.accessor]
+                                    )}
+                                </td>
+                            ))}
+                        </tr>
+                    ))
+                )}
             </tbody>
         </table>
     )};
