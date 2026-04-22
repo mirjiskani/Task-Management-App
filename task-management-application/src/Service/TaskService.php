@@ -3,41 +3,44 @@
 namespace App\Service;
 
 use App\Entity\Tasks;
+use App\Entity\Users;
 use App\Repository\TasksRepository;
+use App\Repository\UsersRepository;
 use App\Exception\ValidationException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class TaskService
 {
     private TasksRepository $taskRepository;
+    private UsersRepository $usersRepository;
     private ValidatorInterface $validator;
 
     public function __construct(
         TasksRepository $taskRepository,
+        UsersRepository $usersRepository,
         ValidatorInterface $validator
     ) {
         $this->taskRepository = $taskRepository;
+        $this->usersRepository = $usersRepository;
         $this->validator = $validator;
     }
 
     public function createTask(array $data): Tasks
     {
-        // Business validation
-        if (empty($data['name'])) {
-            throw new \InvalidArgumentException('Name is required');
-        }
-        
-        if (empty($data['email'])) {
-            throw new \InvalidArgumentException('Email is required');
-        }
-        
-        if (empty($data['task'])) {
-            throw new \InvalidArgumentException('Task description is required');
+        // Validate user_id is provided
+        if (empty($data['user_id'])) {
+            throw new \InvalidArgumentException('user_id is required');
         }
 
-        // Validate email format
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            throw new \InvalidArgumentException('Invalid email format');
+        // Get the user
+        $user = $this->usersRepository->find($data['user_id']);
+        if (!$user) {
+            throw new \InvalidArgumentException('User not found with id: ' . $data['user_id']);
+        }
+
+        // Business validation
+        if (empty($data['task'])) {
+            throw new \InvalidArgumentException('Task description is required');
         }
 
         // Validate task description length
@@ -46,10 +49,8 @@ class TaskService
         }
 
         $task = new Tasks();
-        $task->setName($data['name']);
-        $task->setEmail($data['email']);
-        $task->setRole($data['role'] ?? 'user');
         $task->setTask($data['task']);
+        $task->setUser($user);
         $task->setCreatedAt(new \DateTime());
         $task->setUpdatedAt(new \DateTime());
 
@@ -70,35 +71,16 @@ class TaskService
             throw new \RuntimeException('Task not found');
         }
 
-        // Business logic for updates
-        if (isset($data['name'])) {
-            if (empty($data['name'])) {
-                throw new \InvalidArgumentException('Name cannot be empty');
+        // Update user if user_id is provided
+        if (isset($data['user_id'])) {
+            $user = $this->usersRepository->find($data['user_id']);
+            if (!$user) {
+                throw new \InvalidArgumentException('User not found with id: ' . $data['user_id']);
             }
-            if (strlen($data['name']) < 2) {
-                throw new \InvalidArgumentException('Name must be at least 2 characters');
-            }
-            $task->setName($data['name']);
+            $task->setUser($user);
         }
 
-        if (isset($data['email'])) {
-            if (empty($data['email'])) {
-                throw new \InvalidArgumentException('Email cannot be empty');
-            }
-            
-            if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-                throw new \InvalidArgumentException('Invalid email format');
-            }
-            $task->setEmail($data['email']);
-        }
-
-        if (isset($data['role'])) {
-            if (!in_array($data['role'], ['admin', 'manager', 'user'])) {
-                throw new \InvalidArgumentException('Invalid role. Must be admin, manager, or user');
-            }
-            $task->setRole($data['role']);
-        }
-
+        // Update task description if provided
         if (isset($data['task'])) {
             if (empty($data['task'])) {
                 throw new \InvalidArgumentException('Task description cannot be empty');
@@ -150,10 +132,14 @@ class TaskService
     {
         return [
             'id' => $task->getId(),
-            'name' => $task->getName(),
-            'email' => $task->getEmail(),
-            'role' => $task->getRole(),
             'task' => $task->getTask(),
+            'user_id' => $task->getUser()?->getId(),
+            'user' => $task->getUser() ? [
+                'id' => $task->getUser()->getId(),
+                'name' => $task->getUser()->getName(),
+                'email' => $task->getUser()->getEmail(),
+                'role' => $task->getUser()->getRole()
+            ] : null,
             'created_at' => $task->getCreatedAt()->format('Y-m-d H:i:s'),
             'updated_at' => $task->getUpdatedAt()->format('Y-m-d H:i:s')
         ];

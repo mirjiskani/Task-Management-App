@@ -35,11 +35,12 @@ A robust RESTful API built with Symfony 7 for managing tasks and users with JWT 
 - **Profile Management** - Users can update their own profiles
 
 ### Task Management
-- **Create Tasks** - Add new tasks with assignments
-- **Get All Tasks** - List tasks with filtering options
-- **Get Single Task** - Retrieve detailed task information
-- **Update Tasks** - Modify task details and status
+- **Create Tasks** - Add new tasks assigned to users
+- **Get All Tasks** - List all tasks with user information
+- **Get Single Task** - Retrieve detailed task information with assigned user
+- **Update Tasks** - Modify task details and reassign to different users
 - **Delete Tasks** - Remove tasks from system
+- **User-Task Relationship** - Tasks are linked to users with foreign key constraints
 
 ## API Documentation
 
@@ -162,6 +163,28 @@ Content-Type: application/json
 GET /api/tasks
 ```
 
+Response:
+```json
+{
+    "tasks": [
+        {
+            "id": 1,
+            "task": "Task description here",
+            "user_id": 1,
+            "user": {
+                "id": 1,
+                "name": "John Doe",
+                "email": "john@example.com",
+                "role": "user"
+            },
+            "created_at": "2026-04-22 10:30:00",
+            "updated_at": "2026-04-22 10:30:00"
+        }
+    ],
+    "total": 1
+}
+```
+
 #### Get Single Task
 ```http
 GET /api/tasks/{id}
@@ -173,11 +196,28 @@ POST /api/tasks
 Content-Type: application/json
 
 {
-    "title": "Complete Project",
-    "description": "Finish the task management project",
-    "status": "in_progress",
-    "assigned_to": 1,
-    "created_by": 1
+    "user_id": 1,
+    "task": "Task description with at least 10 characters required"
+}
+```
+
+Response:
+```json
+{
+    "message": "Task created successfully",
+    "task": {
+        "id": 1,
+        "task": "Task description with at least 10 characters required",
+        "user_id": 1,
+        "user": {
+            "id": 1,
+            "name": "John Doe",
+            "email": "john@example.com",
+            "role": "user"
+        },
+        "created_at": "2026-04-22 10:30:00",
+        "updated_at": "2026-04-22 10:30:00"
+    }
 }
 ```
 
@@ -187,8 +227,8 @@ PUT /api/tasks/{id}
 Content-Type: application/json
 
 {
-    "title": "Updated Project",
-    "status": "completed"
+    "user_id": 1,
+    "task": "Updated task description with at least 10 characters"
 }
 ```
 
@@ -339,6 +379,41 @@ task-management-application/
 |-- composer.json
 |-- .env.example
 ```
+
+## Database Schema
+
+### Tables
+
+#### Users Table
+```sql
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL (admin, manager, user),
+    status SMALLINT NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+)
+```
+
+#### Tasks Table
+```sql
+CREATE TABLE tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    task LONGTEXT NOT NULL,
+    user_id INT NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+)
+```
+
+### Relationships
+- **One-to-Many**: One User can have multiple Tasks
+- **Foreign Key**: Tasks.user_id references Users.id
+- **Cascade Delete**: Deleting a user automatically deletes all their tasks
 
 ## Security Features
 
